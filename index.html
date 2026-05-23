@@ -2449,15 +2449,22 @@ async function testGeminiKey() {
   const key = getGeminiKey();
   if (!key) { setKeyStatus('No key saved — paste and save first', 'warn'); return; }
   setKeyStatus('Testing…', 'warn');
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply with just: OK' }] }] }) }
-    );
-    if (r.ok) setKeyStatus('Key works!', 'ok');
-    else { const d = await r.json(); setKeyStatus('Error: ' + (d.error?.message || r.status), 'fail'); }
-  } catch(e) { setKeyStatus('Network error: ' + e.message, 'fail'); }
+  const testModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'];
+  for (const model of testModels) {
+    try {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply with just: OK' }] }] }) }
+      );
+      const d = await r.json();
+      if (r.ok) { setKeyStatus('Key works! (' + model + ')', 'ok'); return; }
+      const msg = (d.error && d.error.message) ? d.error.message : String(r.status);
+      if (msg.toLowerCase().includes('quota')) continue;
+      setKeyStatus('Error: ' + msg, 'fail'); return;
+    } catch(e) { setKeyStatus('Network error: ' + e.message, 'fail'); return; }
+  }
+  setKeyStatus('All models quota-limited right now. Key is valid — wait ~1 min and retry.', 'warn');
 }
 
 // On settings open, pre-fill saved key
@@ -2697,44 +2704,84 @@ async function geminiAutofill() {
   try {
     const prompt = buildGeminiPrompt(teamA, teamB, today);
 
-    const body = {
-      contents: [{ parts: [{ text: prompt }] }],
-      tools: [{ google_search: {} }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
-    };
+    // Model fallback chain — tries each until one works
+    // gemini-1.5-flash is the most generous free tier (15 rpm, 1500/day, no billing needed)
+    const MODELS = [
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+    ];
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    );
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const msg = err.error?.message || `HTTP ${res.status}`;
-      throw new Error(msg);
+    async function tryModel(model) {
+      // gemini-2.0+ uses google_search tool; 1.5 uses googleSearch
+      const searchTool = model.startsWith('gemini-2') ? { google_search: {} } : { googleSearch: {} };
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [searchTool],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+      };
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.error?.message || `HTTP ${res.status}`;
+        const isQuota = msg.toLowerCase().includes('quota') || msg.includes('429') || res.status === 429;
+        throw Object.assign(new Error(msg), { isQuota, model });
+      }
+      return data;
     }
 
-    const data = await res.json();
+    let data = null;
+    let usedModel = '';
+    let lastErr = null;
 
-    // Extract text from all candidate parts
+    for (const model of MODELS) {
+      try {
+        showFetchStatus('loading', `Searching with ${model}…`, [], []);
+        data = await tryModel(model);
+        usedModel = model;
+        break;
+      } catch(e) {
+        lastErr = e;
+        console.warn(`Model ${model} failed:`, e.message);
+        if (!e.isQuota) break; // non-quota error (bad key, network) — don't retry other models
+        // quota error — try next model
+      }
+    }
+
+    if (!data) throw lastErr || new Error('All models quota-exceeded. Wait a minute and retry, or enable billing at aistudio.google.com.');
+
     const text = (data.candidates || [])
       .flatMap(c => c.content?.parts || [])
       .filter(p => p.text)
       .map(p => p.text)
       .join('\n');
 
-    if (!text) throw new Error('Gemini returned an empty response. Try again.');
+    if (!text) throw new Error(`${usedModel} returned empty response. Try again.`);
 
     const stats = parseStatsJson(text);
     if (!stats) {
-      console.error('Raw Gemini response:', text);
-      throw new Error('Could not parse JSON from Gemini response. The model may have returned plain text. Check console for raw output.');
+      console.error('Raw response:', text);
+      throw new Error(`Could not parse JSON from ${usedModel}. Check browser console for raw output.`);
     }
+
+    // Tag which model was used so it shows in sources
+    if (stats.sources) stats.sources.unshift(usedModel);
+    else stats.sources = [usedModel];
 
     applyStats(stats, teamA, teamB);
 
   } catch(e) {
-    showFetchStatus('failed', 'Gemini error: ' + e.message, [], []);
+    const isQuota = e.message?.toLowerCase().includes('quota') || e.isQuota;
+    showFetchStatus('failed',
+      isQuota
+        ? 'All free-tier models are quota-limited. Wait ~1 min and retry, or go to aistudio.google.com to enable billing (still very cheap). You can also try a different API key.'
+        : 'Gemini error: ' + e.message,
+      [], []
+    );
     console.error('Gemini autofill error:', e);
   } finally {
     if (btn) btn.disabled = false;
