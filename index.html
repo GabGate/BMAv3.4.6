@@ -2464,7 +2464,7 @@ async function testGeminiKey() {
     const names = (ld.models || []).map(function(m){ return m.name.replace('models/',''); });
     console.log('Available models:', names);
     // Step 2: try a quick generate with best available free model
-    const prefer = ['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-2.5-flash-lite-preview-06-17','gemini-2.0-flash'];
+    const prefer = ['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-2.0-flash','gemini-2.0-flash-lite'];
     const candidate = prefer.find(function(m){ return names.some(function(n){ return n === m || n.startsWith(m); }); }) || names.find(function(n){ return n.includes('flash'); });
     if (!candidate) { setKeyStatus('Key valid but no flash models found. Check AI Studio.', 'warn'); return; }
     setKeyStatus('Testing with ' + candidate + '…', 'warn');
@@ -2580,12 +2580,47 @@ Replace ALL example values with REAL searched data. Use null only if genuinely u
 // ── Parse JSON from response ──────────────────────────────────
 function parseStatsJson(text) {
   if (!text) return null;
-  // Strip markdown fences if present
+
+  // Gemini with search grounding sometimes returns two JSON blocks concatenated.
+  // Strategy: strip fences, find ALL {...} candidates, try largest-first, pick
+  // the one that has the expected shape (gamesA / gamesB keys).
+
+  // 1. Strip all markdown code fences
   let clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-  // Find the JSON object
-  const m = clean.match(/\{[\s\S]*\}/);
-  if (!m) return null;
-  try { return JSON.parse(m[0]); } catch(_) { return null; }
+
+  // 2. Collect every top-level {...} block by scanning for balanced braces
+  const candidates = [];
+  let depth = 0, start = -1;
+  for (let i = 0; i < clean.length; i++) {
+    if (clean[i] === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (clean[i] === '}') {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        candidates.push(clean.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+
+  // 3. Sort largest first (the full stats object is the biggest block)
+  candidates.sort(function(a, b) { return b.length - a.length; });
+
+  // 4. Return the first one that parses AND has gamesA or gamesB
+  for (var i = 0; i < candidates.length; i++) {
+    try {
+      var obj = JSON.parse(candidates[i]);
+      if (obj && (obj.gamesA || obj.gamesB)) return obj;
+    } catch(_) {}
+  }
+
+  // 5. Fallback: return any parseable object
+  for (var j = 0; j < candidates.length; j++) {
+    try { return JSON.parse(candidates[j]); } catch(_) {}
+  }
+
+  return null;
 }
 
 // ── Apply stats to state (index 0 = most recent) ──────────────
@@ -2728,11 +2763,12 @@ async function geminiAutofill() {
     // gemini-2.5-flash-lite: 15 RPM, 1000 RPD free
     // gemini-2.5-flash:      10 RPM,  500 RPD free  
     // gemini-2.0-flash:      retiring 2026-06-01, skip unless others fail
+    // Current working free-tier models (May 2026) — no preview/sunset IDs
     const MODELS = [
-      'gemini-2.5-flash-lite-preview-06-17',
       'gemini-2.5-flash',
       'gemini-2.5-flash-lite',
       'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
     ];
 
     async function tryModel(model) {
@@ -2785,8 +2821,10 @@ async function geminiAutofill() {
 
     const stats = parseStatsJson(text);
     if (!stats) {
-      console.error('Raw response:', text);
-      throw new Error(`Could not parse JSON from ${usedModel}. Check browser console for raw output.`);
+      console.error('=== RAW GEMINI RESPONSE ===', text);
+      const hasJson = text.includes('"gamesA"') || text.includes('"gamesB"');
+      const hint = hasJson ? 'JSON found but could not be extracted — model split its response.' : 'Model returned plain text, not JSON — try again.';
+      throw new Error(usedModel + ' parse failed: ' + hint);
     }
 
     // Tag which model was used so it shows in sources
