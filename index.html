@@ -2553,6 +2553,7 @@ async function geminiAutofill() {
   }
 }
 
+// Replace the callGeminiAPI function with this:
 async function callGeminiAPI(prompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
   
@@ -2564,8 +2565,7 @@ async function callGeminiAPI(prompt) {
     }],
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 2000,
-      responseMimeType: "application/json"
+      maxOutputTokens: 2000
     }
   };
 
@@ -2585,68 +2585,64 @@ async function callGeminiAPI(prompt) {
   const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('No JSON found in response');
+  // Extract JSON from the response text (Gemini might add markdown)
+  let jsonText = text;
+  
+  // Remove markdown code blocks if present
+  jsonText = jsonText.replace(/```json\s*/g, '');
+  jsonText = jsonText.replace(/```\s*/g, '');
+  
+  // Find JSON object
+  const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('No JSON found in response:', text.substring(0, 500));
+    throw new Error('No JSON found in response');
+  }
   
   try {
     return JSON.parse(jsonMatch[0]);
   } catch (e) {
-    throw new Error('Invalid JSON response');
+    console.error('JSON parse error:', e.message);
+    console.error('Attempted to parse:', jsonMatch[0].substring(0, 500));
+    throw new Error('Invalid JSON response from Gemini');
   }
 }
 
+// Replace the buildGeminiPrompt function with this (simpler prompt):
 function buildGeminiPrompt(teamA, teamB) {
-  const today = new Date().toISOString().split('T')[0];
-  
-  return `You are a basketball stats expert. Search your knowledge and return ONLY valid JSON for: ${teamA} vs ${teamB}.
+  return `You are a basketball stats database. Return ONLY valid JSON for ${teamA} vs ${teamB}.
 
-TASK: Find the last 3 completed games for each team, and their last 3 head-to-head matchups.
+Find the last 3 games for each team and their last 3 head-to-head matchups.
 
-REQUIRED FIELDS:
-- teamA: "${teamA}"
-- teamB: "${teamB}"
-- gamesA: array of 3 objects, most recent first, each with:
-  { teamScore, oppScore, fga, tpa, defFgPct, assistsAllowed }
-- gamesB: same structure
-- h2hGames: array of up to 3 objects, most recent first, each with:
-  { a: ${teamA} score, b: ${teamB} score, date: "YYYY-MM-DD" }
-
-DEFENSIVE STATS EXPLANATION:
-- defFgPct = OPPONENT's field goal percentage (e.g., opponent shot 38/82 = 0.463)
-- assistsAllowed = OPPONENT's assists in that game
-These come from the opponent's box score vs this team.
-
-RULES:
-1. Use NULL only if data is truly unavailable
-2. Do NOT fabricate numbers
-3. Return ONLY the JSON object, no markdown, no explanation
-4. Include dataQuality and sources fields
-
-EXAMPLE OUTPUT:
+Required JSON structure:
 {
-  "teamA": "Boston Celtics",
-  "teamB": "Golden State Warriors",
+  "teamA": "${teamA}",
+  "teamB": "${teamB}",
   "gamesA": [
-    {"teamScore": 121, "oppScore": 112, "fga": 89, "tpa": 42, "defFgPct": 0.452, "assistsAllowed": 26},
-    {"teamScore": 118, "oppScore": 105, "fga": 86, "tpa": 38, "defFgPct": 0.441, "assistsAllowed": 24},
-    {"teamScore": 115, "oppScore": 110, "fga": 88, "tpa": 40, "defFgPct": 0.465, "assistsAllowed": 25}
+    {"teamScore": 0, "oppScore": 0, "fga": 0, "tpa": 0, "defFgPct": 0.0, "assistsAllowed": 0},
+    {"teamScore": 0, "oppScore": 0, "fga": 0, "tpa": 0, "defFgPct": 0.0, "assistsAllowed": 0},
+    {"teamScore": 0, "oppScore": 0, "fga": 0, "tpa": 0, "defFgPct": 0.0, "assistsAllowed": 0}
   ],
   "gamesB": [
-    {"teamScore": 119, "oppScore": 114, "fga": 87, "tpa": 39, "defFgPct": 0.458, "assistsAllowed": 27},
-    {"teamScore": 112, "oppScore": 108, "fga": 84, "tpa": 36, "defFgPct": 0.449, "assistsAllowed": 23},
-    {"teamScore": 116, "oppScore": 109, "fga": 86, "tpa": 37, "defFgPct": 0.462, "assistsAllowed": 25}
+    {"teamScore": 0, "oppScore": 0, "fga": 0, "tpa": 0, "defFgPct": 0.0, "assistsAllowed": 0},
+    {"teamScore": 0, "oppScore": 0, "fga": 0, "tpa": 0, "defFgPct": 0.0, "assistsAllowed": 0},
+    {"teamScore": 0, "oppScore": 0, "fga": 0, "tpa": 0, "defFgPct": 0.0, "assistsAllowed": 0}
   ],
   "h2hGames": [
-    {"a": 121, "b": 119, "date": "2025-01-20"},
-    {"a": 112, "b": 118, "date": "2024-12-15"},
-    {"a": 115, "b": 110, "date": "2024-11-10"}
-  ],
-  "dataQuality": "full",
-  "sources": ["Web Search"]
+    {"a": 0, "b": 0, "date": "YYYY-MM-DD"},
+    {"a": 0, "b": 0, "date": "YYYY-MM-DD"}
+  ]
 }
 
-Now provide JSON for ${teamA} vs ${teamB}:`;
-}
+FIELD NOTES:
+- teamScore/oppScore: final game scores
+- fga: field goal attempts by THIS team
+- tpa: 3-point attempts by THIS team
+- defFgPct: OPPONENT's field goal percentage (e.g., 0.445 = 44.5%)
+- assistsAllowed: OPPONENT's assists in that game
+
+Return ONLY the JSON object with real data. Use null if you truly don't know. Do not add any text before or after the JSON.`;
+  }
 
 function applyStats(stats, teamA, teamB) {
   const filled = [], warnings = [];
