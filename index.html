@@ -2555,7 +2555,8 @@ async function geminiAutofill() {
 
 // Replace the callGeminiAPI function with this:
 async function callGeminiAPI(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
+  // Use stable model instead of experimental
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
   
   const requestBody = {
     contents: [{
@@ -2569,6 +2570,8 @@ async function callGeminiAPI(prompt) {
     }
   };
 
+  console.log('Calling Gemini API...');
+  
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -2578,36 +2581,45 @@ async function callGeminiAPI(prompt) {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`API Error (${response.status}): ${error.substring(0, 200)}`);
+    const errorText = await response.text();
+    console.error('API Error Response:', errorText);
+    
+    // Check for specific error types
+    if (response.status === 400) {
+      throw new Error('Invalid request. Make sure your API key is correct and has Gemini API enabled.');
+    } else if (response.status === 403) {
+      throw new Error('API key invalid or billing not enabled. Check your Google AI Studio account.');
+    } else {
+      throw new Error(`API Error ${response.status}: ${errorText.substring(0, 200)}`);
+    }
   }
 
   const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  // Extract JSON from the response text (Gemini might add markdown)
-  let jsonText = text;
+  if (!text) {
+    throw new Error('Empty response from Gemini');
+  }
   
-  // Remove markdown code blocks if present
+  // Extract JSON from response
+  let jsonText = text;
   jsonText = jsonText.replace(/```json\s*/g, '');
   jsonText = jsonText.replace(/```\s*/g, '');
   
-  // Find JSON object
   const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    console.error('No JSON found in response:', text.substring(0, 500));
-    throw new Error('No JSON found in response');
+    console.error('Response text:', text);
+    throw new Error('Could not extract JSON from response');
   }
   
   try {
     return JSON.parse(jsonMatch[0]);
   } catch (e) {
     console.error('JSON parse error:', e.message);
-    console.error('Attempted to parse:', jsonMatch[0].substring(0, 500));
-    throw new Error('Invalid JSON response from Gemini');
+    throw new Error('Invalid JSON returned from Gemini');
   }
-}
-
+  }
+  
 // Replace the buildGeminiPrompt function with this (simpler prompt):
 function buildGeminiPrompt(teamA, teamB) {
   return `You are a basketball stats database. Return ONLY valid JSON for ${teamA} vs ${teamB}.
