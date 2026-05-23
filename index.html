@@ -2548,33 +2548,32 @@ function markAutofilled() {
 
 // ── Build the prompt ──────────────────────────────────────────
 function buildGeminiPrompt(teamA, teamB, today) {
-  return `You are a basketball stats analyst. Today is ${today}. Use Google Search to find REAL, VERIFIED stats.
-
-Find the last 3 completed games for each team AND their head-to-head history.
-
-SEARCH THESE SOURCES: SofaScore, ESPN, basketball-reference.com, official league websites.
-
-Teams:
-- Team A: ${teamA}
-- Team B: ${teamB}
-
-CRITICAL ORDERING: gamesA[0] and gamesB[0] MUST be the MOST RECENT game. gamesA[2] and gamesB[2] MUST be the OLDEST of the 3.
-
-CRITICAL FIELD DEFINITIONS — read carefully:
-- teamScore: Points scored BY this team in that game
-- oppScore: Points scored BY the OPPONENT against this team
-- fga: Field Goal ATTEMPTS by THIS team (not opponent)
-- tpa: Three-Point ATTEMPTS by THIS team (not opponent)
-- defFgPct: The OPPONENT's field goal percentage in that game against this team. This is the defensive FG% ALLOWED. Example: if the opponent shot 18/40 FGs, defFgPct = 0.450. Search for "opponent FG%" or "opp FG%" in the box score.
-- assistsAllowed: How many assists the OPPONENT had in that game against this team. Look at the opponent's box score assists total.
-
-For h2hGames: a = ${teamA} score, b = ${teamB} score. Most recent first. Include up to 3.
-
-Return ONLY valid raw JSON. No markdown, no backtick fences, no explanation text before or after. Just the JSON object:
-
-{"teamA":"${teamA}","teamB":"${teamB}","gamesA":[{"gameLabel":"vs OpponentName (YYYY-MM-DD)","teamScore":112,"oppScore":105,"fga":85,"tpa":30,"defFgPct":0.443,"assistsAllowed":22},{"gameLabel":"vs OpponentName (YYYY-MM-DD)","teamScore":108,"oppScore":99,"fga":88,"tpa":33,"defFgPct":0.461,"assistsAllowed":19},{"gameLabel":"vs OpponentName (YYYY-MM-DD)","teamScore":115,"oppScore":110,"fga":91,"tpa":35,"defFgPct":0.452,"assistsAllowed":25}],"gamesB":[{"gameLabel":"vs OpponentName (YYYY-MM-DD)","teamScore":105,"oppScore":98,"fga":82,"tpa":28,"defFgPct":0.438,"assistsAllowed":21},{"gameLabel":"vs OpponentName (YYYY-MM-DD)","teamScore":99,"oppScore":103,"fga":79,"tpa":25,"defFgPct":0.471,"assistsAllowed":23},{"gameLabel":"vs OpponentName (YYYY-MM-DD)","teamScore":111,"oppScore":107,"fga":86,"tpa":31,"defFgPct":0.455,"assistsAllowed":20}],"h2hGames":[{"a":108,"b":102,"date":"2025-01-15"},{"a":95,"b":112,"date":"2024-11-20"}],"dataQuality":"full","sources":["SofaScore","ESPN"]}
-
-Replace ALL example values with REAL searched data. Use null only if genuinely unavailable after searching.`;
+  return 'Basketball stats lookup. Today: ' + today + '. Search Google for real results.\n\n' +
+  'Find the last 3 COMPLETED games for each team, plus up to 3 head-to-head games between them.\n' +
+  'Search SofaScore, ESPN, basketball-reference.com and official league sites.\n\n' +
+  'Team A: ' + teamA + '\n' +
+  'Team B: ' + teamB + '\n\n' +
+  'FIELD DEFINITIONS:\n' +
+  '- teamScore: points scored BY this team\n' +
+  '- oppScore: points scored BY the opponent against this team\n' +
+  '- fga: field goal ATTEMPTS by THIS team\n' +
+  '- tpa: three-point ATTEMPTS by THIS team\n' +
+  '- defFgPct: opponent field goal % against this team (e.g. opp shot 18/40 = 0.450)\n' +
+  '- assistsAllowed: assists the OPPONENT had in that game\n' +
+  '- gameLabel: short string like "vs Opponent (YYYY-MM-DD)"\n\n' +
+  'ORDER: index 0 = most recent game, index 2 = oldest.\n' +
+  'For h2hGames: a = ' + teamA + ' score, b = ' + teamB + ' score.\n\n' +
+  'Respond with ONLY a JSON object. No markdown fences, no explanation, no text before or after the JSON.\n\n' +
+  'Schema (replace nulls with real values):\n' +
+  '{"teamA":"' + teamA + '","teamB":"' + teamB + '","gamesA":[' +
+    '{"gameLabel":"vs X (YYYY-MM-DD)","teamScore":0,"oppScore":0,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null},' +
+    '{"gameLabel":"vs X (YYYY-MM-DD)","teamScore":0,"oppScore":0,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null},' +
+    '{"gameLabel":"vs X (YYYY-MM-DD)","teamScore":0,"oppScore":0,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null}' +
+  '],"gamesB":[' +
+    '{"gameLabel":"vs X (YYYY-MM-DD)","teamScore":0,"oppScore":0,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null},' +
+    '{"gameLabel":"vs X (YYYY-MM-DD)","teamScore":0,"oppScore":0,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null},' +
+    '{"gameLabel":"vs X (YYYY-MM-DD)","teamScore":0,"oppScore":0,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null}' +
+  '],"h2hGames":[{"a":0,"b":0,"date":"YYYY-MM-DD"}],"dataQuality":"full","sources":["SofaScore"]}';
 }
 
 // ── Parse JSON from response ──────────────────────────────────
@@ -2775,7 +2774,7 @@ async function geminiAutofill() {
       const body = {
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ googleSearch: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: 'application/json' }
       };
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -2811,23 +2810,38 @@ async function geminiAutofill() {
 
     if (!data) throw lastErr || new Error('All models failed. Check your API key or wait 1 min and retry.');
 
-    const text = (data.candidates || [])
-      .flatMap(c => c.content?.parts || [])
-      .filter(p => p.text)
-      .map(p => p.text)
-      .join('\n');
+    // Extract text — Gemini search grounding can duplicate blocks or split content.
+    // Collect all non-empty text parts, deduplicate by 80-char prefix, join.
+    var rawParts = (data.candidates || [])
+      .reduce(function(acc, c) {
+        var parts = (c.content && c.content.parts) ? c.content.parts : [];
+        return acc.concat(parts);
+      }, [])
+      .filter(function(p) { return p.text && p.text.trim().length > 10; })
+      .map(function(p) { return p.text.trim(); });
 
-    if (!text) throw new Error(`${usedModel} returned empty response. Try again.`);
+    var seen = {};
+    var uniqueParts = rawParts.filter(function(t) {
+      var key = t.slice(0, 80);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
 
-    const stats = parseStatsJson(text);
+    var text = uniqueParts.join('\n');
+    if (!text) throw new Error(usedModel + ' returned empty response. Try again.');
+
+    var stats = parseStatsJson(text);
     if (!stats) {
-      console.error('=== RAW GEMINI RESPONSE ===', text);
-      const hasJson = text.includes('"gamesA"') || text.includes('"gamesB"');
-      const hint = hasJson ? 'JSON found but could not be extracted — model split its response.' : 'Model returned plain text, not JSON — try again.';
-      throw new Error(usedModel + ' parse failed: ' + hint);
+      console.error('=== RAW GEMINI RESPONSE ===');
+      console.error(text);
+      var hasJson = text.indexOf('"gamesA"') !== -1 || text.indexOf('"gamesB"') !== -1;
+      var hint = hasJson
+        ? 'JSON found but incomplete (truncated). Retry — if it keeps failing, the model is having trouble with this matchup.'
+        : 'Model returned plain text, not JSON. Retry once.';
+      throw new Error(usedModel + ': ' + hint);
     }
 
-    // Tag which model was used so it shows in sources
     if (stats.sources) stats.sources.unshift(usedModel);
     else stats.sources = [usedModel];
 
