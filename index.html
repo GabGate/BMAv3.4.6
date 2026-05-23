@@ -714,7 +714,6 @@ body {
 .autofill-status.loading { background:rgba(6,182,212,.06);color:#A5F3FC;border:1px solid rgba(6,182,212,.2); }
 .autofill-status { display:none; }
 .input-field.autofilled { border-color:rgba(6,182,212,.6)!important;background:rgba(6,182,212,.07)!important; }
-/* settings status handled by JS class */
 </style>
 </head>
 <body>
@@ -745,12 +744,12 @@ body {
 <!-- ══════════ PAGE: INPUT ══════════ -->
 <div class="page active" id="page-input">
 
-  <!-- ══ CLAUDE AI AUTOFILL CARD ══ -->
+  <!-- ══ GEMINI AI AUTOFILL CARD ══ -->
   <div class="card" id="fixturesFetchCard">
-    <div class="card-header" style="background:linear-gradient(135deg,#7C3AED,#5B21B6)">
-      <span>🤖</span>
-      <span class="card-header-title" style="color:#DDD6FE">Claude AI Autofill</span>
-      <span style="margin-left:auto;font-size:10px;font-weight:700;color:#A78BFA;padding:3px 7px;border-radius:5px;background:rgba(124,58,237,.2)">AI-Powered</span>
+    <div class="card-header" style="background:linear-gradient(135deg,#1E3A8A,#2563A8)">
+      <span>🧠</span>
+      <span class="card-header-title" style="color:#DBEAFE">Gemini AI Autofill (Free)</span>
+      <span style="margin-left:auto;font-size:10px;font-weight:700;color:#93C5FD;padding:3px 7px;border-radius:5px;background:rgba(37,99,168,.3)">Powered by Google</span>
     </div>
     <div class="card-body">
       <div class="input-group" style="margin-bottom:8px">
@@ -765,16 +764,16 @@ body {
           placeholder="e.g. Golden State Warriors, Fenerbahçe…"
           style="font-size:14px">
       </div>
-      <button class="btn" id="claudeAutofillBtn" onclick="claudeAutofill()"
-        style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1px;padding:13px;margin-bottom:8px">
+      <button class="btn" id="claudeAutofillBtn" onclick="geminiAutofill()"
+        style="width:100%;background:linear-gradient(135deg,#1E3A8A,#2563A8);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1px;padding:13px;margin-bottom:8px">
         <span id="claudeSpinner" style="display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle"></span>
-        🤖 AUTOFILL WITH CLAUDE AI
+        🤖 AUTOFILL WITH GEMINI AI
       </button>
       <div id="fetchStatus" class="autofill-status" style="display:none"></div>
       <div id="claudeApiNotice" style="font-size:11px;color:var(--mg);line-height:1.7;margin-top:6px">
-        📌 Claude searches SofaScore, ESPN &amp; basketball-reference for real stats → fills last 3 games, FGA, 3PA, Defensive FG%, Assists Allowed &amp; H2H results.<br>
+        📌 Gemini searches its knowledge base for real stats → fills last 3 games, FGA, 3PA, Defensive FG%, Assists Allowed & H2H results.<br>
         After filling, choose the correct <b style="color:var(--wh)">League Preset</b> below.<br>
-        <span id="claudeEnvNotice" style="display:none;color:#FCD34D">⚠️ <b>AI autofill requires this app to run inside Claude.ai.</b> Open it as a Claude artifact or ask Claude to embed it — local file mode has no API access.</span>
+        <span id="geminiKeyReminder" style="display:block;margin-top:6px;color:#FCD34D">🔑 <b>First, add your free Gemini API key in Settings → Gemini API Key.</b> Get it from <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#FBBF24">Google AI Studio</a> (free tier included).</span>
       </div>
     </div>
   </div>
@@ -1124,22 +1123,24 @@ body {
 <div class="page" id="page-settings">
 
   <div class="card">
-    <div class="card-header" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)">
-      <span>🤖</span><span class="card-header-title">Claude AI Autofill</span>
+    <div class="card-header" style="background:linear-gradient(135deg,#1E3A8A,#2563A8)">
+      <span>🔑</span><span class="card-header-title">Gemini API Key (Free)</span>
     </div>
     <div class="card-body">
       <div style="font-size:12px;color:var(--mg);margin-bottom:12px;line-height:1.7">
-        This app uses <b style="color:var(--wh)">Claude AI with web search</b> to find real basketball stats from SofaScore, ESPN, and basketball-reference.com. No API key needed — just type the matchup and click Autofill.
+        <b style="color:var(--ac)">Free tier: 60 requests/minute, 1.5M tokens/month</b> — perfect for this app.<br>
+        Get your key from <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--ac)">Google AI Studio</a> → Create API Key → Copy.
       </div>
-      <div style="padding:12px;background:rgba(124,58,237,.12);border-radius:8px;border:1px solid rgba(124,58,237,.3)">
-        <div style="font-size:11px;font-weight:700;color:#C4B5FD;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">What gets filled automatically</div>
-        <div style="font-size:11px;color:var(--mg);line-height:2">
-          ✅ Last 3 games: Team Score &amp; Opp Score<br>
-          ✅ FGA &amp; 3PA per game<br>
-          ✅ Defensive FG% Allowed (from Opp box score)<br>
-          ✅ Assists Allowed (opponent assists vs this team)<br>
-          ✅ Last 3 H2H Results between the two teams
-        </div>
+      <div class="input-group" style="margin-bottom:12px">
+        <span class="input-label">Gemini API Key</span>
+        <input type="password" class="input-field" id="geminiApiKeyInput" 
+          placeholder="AIzaSy... (your key here)"
+          style="font-family:monospace;font-size:13px">
+        <div id="geminiStatus" class="autofill-status" style="display:block;margin-top:6px;padding:6px 10px;border-radius:6px;font-size:11px"></div>
+      </div>
+      <div class="btn-row-split">
+        <button class="btn btn-primary" onclick="saveGeminiKey()" style="flex:1">💾 Save API Key</button>
+        <button class="btn btn-ghost" onclick="testGeminiKey()" style="flex:1">🔍 Test Connection</button>
       </div>
     </div>
   </div>
@@ -1176,7 +1177,7 @@ body {
         <span style="color:var(--gf);font-weight:700">✅ 100% offline:</span><br>
         Manual entry · Analysis · Fixture log · Q1 tracker · Predictions · Print/PDF<br><br>
         <span style="color:var(--yf);font-weight:700">⚠️ Needs internet:</span><br>
-        Get Fixtures / API auto-fill only
+        Gemini AI autofill only
       </div>
     </div>
   </div>
@@ -1188,7 +1189,7 @@ body {
   <div class="card">
     <div class="card-header amber">
       <span>📖</span>
-      <span class="card-header-title">How to Use v3.2</span>
+      <span class="card-header-title">How to Use v3.4</span>
     </div>
     <div class="card-body">
       <div id="guideContent"></div>
@@ -1204,7 +1205,7 @@ body {
   <div class="card">
     <div class="card-header" style="background:linear-gradient(135deg,var(--or),#C2410C)">
       <span>📝</span>
-      <span class="card-header-title">v3.2 Upgrade Log</span>
+      <span class="card-header-title">v3.4 Upgrade Log</span>
     </div>
     <div class="card-body" id="upgradeLogContent"></div>
   </div>
@@ -1327,7 +1328,7 @@ function navigateTo(page) {
   if (page === 'log') renderFixtureLog();
   if (page === 'guide') renderGuide();
   if (page === 'preds') renderPredictions();
-  if (page === 'settings') onSettingsOpen();
+  if (page === 'settings') { loadGeminiApiKey(); updateGeminiStatus(); }
   window.scrollTo(0,0);
 }
 
@@ -2376,23 +2377,92 @@ function closeFxModal() {
   document.getElementById('fxDetailModal').classList.remove('active');
 }
 
-// Close modal on overlay tap
+// ═══════════════════════════════════════════════════════════════════════
+// GEMINI AI AUTOFILL ENGINE (Works from any hosted domain)
+// Get free API key at: https://aistudio.google.com/apikey
+// ═══════════════════════════════════════════════════════════════════════
 
-// ════════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════════
-// CLAUDE AI AUTOFILL ENGINE  (replaces api-sports)
-// ════════════════════════════════════════════════════════════════
+let geminiApiKey = '';
 
-// ── stub helpers kept for backwards compat ───────────────────
-function getKey() { return 'claude-ai'; }
-function updateDot() {}
-function onSettingsOpen() {}
-function refreshUsage() {}
-function toggleApiVis() {}
-function saveApiKey() {}
-function testApiKey() {}
+function loadGeminiApiKey() {
+  try {
+    const saved = localStorage.getItem('bma_gemini_api_key');
+    if (saved) geminiApiKey = saved;
+  } catch(e) {}
+  updateGeminiStatus();
+  if (document.getElementById('geminiApiKeyInput')) {
+    document.getElementById('geminiApiKeyInput').value = geminiApiKey;
+  }
+}
 
-// ── showFetchStatus helper ───────────────────────────────────
+function saveGeminiApiKey(key) {
+  geminiApiKey = key;
+  try { localStorage.setItem('bma_gemini_api_key', key); } catch(e) {}
+  updateGeminiStatus();
+  showToast(key ? '✅ API key saved' : '❌ API key cleared');
+}
+
+function updateGeminiStatus() {
+  const statusEl = document.getElementById('geminiStatus');
+  if (!statusEl) return;
+  if (geminiApiKey && geminiApiKey.startsWith('AIza')) {
+    statusEl.innerHTML = '✅ API Key ready — you can now use Autofill';
+    statusEl.className = 'autofill-status success';
+    statusEl.style.display = 'block';
+  } else if (geminiApiKey) {
+    statusEl.innerHTML = '⚠️ Invalid API key format — keys start with "AIza"';
+    statusEl.className = 'autofill-status failed';
+    statusEl.style.display = 'block';
+  } else {
+    statusEl.innerHTML = '⚠️ No API key — get one free at aistudio.google.com';
+    statusEl.className = 'autofill-status partial';
+    statusEl.style.display = 'block';
+  }
+}
+
+function saveGeminiKey() {
+  const input = document.getElementById('geminiApiKeyInput');
+  const key = input?.value?.trim() || '';
+  if (key && !key.startsWith('AIza')) {
+    showToast('⚠️ Gemini keys start with "AIza" — double-check your key');
+    return;
+  }
+  saveGeminiApiKey(key);
+}
+
+async function testGeminiKey() {
+  if (!geminiApiKey) {
+    showToast('❌ No API key saved — enter one first');
+    return;
+  }
+  
+  showToast('🔍 Testing Gemini API connection...');
+  
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'Say "API works" in JSON: {"status":"ok"}' }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 50 }
+      })
+    });
+    
+    if (response.ok) {
+      showToast('✅ Gemini API key is valid!');
+      updateGeminiStatus();
+    } else {
+      const error = await response.text();
+      showToast(`❌ Invalid key or API error: ${response.status}`);
+      console.error(error);
+    }
+  } catch (e) {
+    showToast(`❌ Connection failed: ${e.message}`);
+  }
+}
+
 function showFetchStatus(type, msg, filled, warnings) {
   const el = document.getElementById('fetchStatus');
   if (!el) return;
@@ -2412,12 +2482,6 @@ function showFetchStatus(type, msg, filled, warnings) {
   el.innerHTML = h;
 }
 
-// ── stub for legacy fixture dropdown (not used with Claude) ──
-let _cachedFixtures = [];
-function fetchUpcomingFixtures() {}
-function onFixtureSelect() {}
-
-// ── markAutofilled ───────────────────────────────────────────
 function markAutofilled() {
   ['A', 'B'].forEach(t => [0, 1, 2].forEach(i => {
     [`g${t}${i}ts`, `g${t}${i}os`, `g${t}${i}fga`, `g${t}${i}tpa`, `d${t}${i}fg`, `d${t}${i}ast`]
@@ -2429,7 +2493,6 @@ function markAutofilled() {
         }
       });
   }));
-  // H2H inputs
   [0, 1, 2].forEach(i => {
     ['a', 'b'].forEach(side => {
       const el = document.getElementById(`h2h${i}${side}`);
@@ -2441,73 +2504,7 @@ function markAutofilled() {
   });
 }
 
-// ── CLAUDE AI AUTOFILL ───────────────────────────────────────
-// ── IFRAME PROXY: hidden Claude artifact bridge ─────────────
-// Direct fetch to api.anthropic.com is blocked by CORS from PWAs.
-// Instead we inject a hidden <iframe> that loads a Claude artifact
-// (which has CORS-exempt access to the Anthropic API), send it a
-// postMessage with the prompt, and receive results back via postMessage.
-
-let _proxyFrame = null;
-let _proxyResolve = null;
-let _proxyReject = null;
-let _proxyTimer = null;
-
-function getProxyFrame() {
-  if (_proxyFrame && document.body.contains(_proxyFrame)) return _proxyFrame;
-  const iframe = document.createElement('iframe');
-  iframe.id = 'claudeProxyFrame';
-  iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;opacity:0;pointer-events:none;top:-9999px;left:-9999px';
-  // This artifact URL is the Claude-hosted bridge that accepts postMessage requests
-  iframe.src = 'https://claude.ai/artifacts/bma-proxy/latest';
-  document.body.appendChild(iframe);
-  _proxyFrame = iframe;
-
-  window.addEventListener('message', (evt) => {
-    if (evt.data?.type !== 'BMA_RESULT') return;
-    clearTimeout(_proxyTimer);
-    if (evt.data.error) {
-      if (_proxyReject) _proxyReject(new Error(evt.data.error));
-    } else {
-      if (_proxyResolve) _proxyResolve(evt.data.stats);
-    }
-    _proxyResolve = null;
-    _proxyReject  = null;
-  }, false);
-
-  return iframe;
-}
-
-function callClaudeProxy(teamA, teamB) {
-  return new Promise((resolve, reject) => {
-    _proxyResolve = resolve;
-    _proxyReject  = reject;
-
-    const today = new Date().toISOString().split('T')[0];
-    const frame  = getProxyFrame();
-
-    // Give the iframe 2s to be ready if freshly created, then post
-    setTimeout(() => {
-      try {
-        frame.contentWindow.postMessage({
-          type: 'BMA_REQUEST',
-          teamA, teamB, today
-        }, '*');
-      } catch(e) {
-        reject(new Error('Could not reach proxy iframe. Try refreshing the page.'));
-      }
-    }, frame.dataset.ready ? 0 : 1800);
-
-    _proxyTimer = setTimeout(() => {
-      _proxyResolve = null;
-      _proxyReject  = null;
-      reject(new Error('Request timed out. The AI bridge may not be reachable from a local file. Open this PWA from a web server (e.g. localhost or your hosting URL) and try again.'));
-    }, 45000);
-  });
-}
-
-// ── MAIN AUTOFILL ────────────────────────────────────────────
-async function claudeAutofill() {
+async function geminiAutofill() {
   const teamA = (document.getElementById('claudeTeamA')?.value || '').trim();
   const teamB = (document.getElementById('claudeTeamB')?.value || '').trim();
 
@@ -2516,10 +2513,17 @@ async function claudeAutofill() {
     return;
   }
 
+  if (!geminiApiKey || !geminiApiKey.startsWith('AIza')) {
+    showFetchStatus('failed', 
+      '🔑 Please enter your Gemini API key in Settings → "Gemini API Key" first.\n\nGet a free key at: https://aistudio.google.com/apikey',
+      [], ['API key required']);
+    return;
+  }
+
   const btn = document.getElementById('claudeAutofillBtn');
-  const sp  = document.getElementById('claudeSpinner');
+  const sp = document.getElementById('claudeSpinner');
   if (btn) btn.disabled = true;
-  if (sp)  sp.style.display = 'inline-block';
+  if (sp) sp.style.display = 'inline-block';
 
   // Set names immediately
   state.teamAName = teamA;
@@ -2527,124 +2531,123 @@ async function claudeAutofill() {
   document.getElementById('teamAName').value = teamA;
   document.getElementById('teamBName').value = teamB;
 
-  // --- Phase 1: try the direct API (works on servers with proper CORS headers or proxied deployments)
-  showFetchStatus('loading', `🤖 Claude is searching for ${teamA} vs ${teamB} stats…`, [], []);
+  showFetchStatus('loading', `🔎 Gemini is searching for ${teamA} vs ${teamB} stats…`, [], []);
 
-  const today = new Date().toISOString().split('T')[0];
-  const promptText = buildStatsPrompt(teamA, teamB, today);
-
-  let stats = null;
-
-  // Try direct fetch first (works if deployed behind a CORS proxy or on claude.ai itself)
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: promptText }]
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const txt = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('\n');
-      stats = parseStatsJson(txt);
+    const prompt = buildGeminiPrompt(teamA, teamB);
+    const stats = await callGeminiAPI(prompt);
+    
+    if (stats) {
+      applyStats(stats, teamA, teamB);
+    } else {
+      throw new Error('Failed to parse Gemini response');
     }
-  } catch (_) { /* CORS blocked — fall through to proxy */ }
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    showFetchStatus('failed',
+      `❌ Autofill failed: ${error.message}<br><small>Check API key or try again in a few seconds.</small>`,
+      [], ['API error']);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (sp) sp.style.display = 'none';
+  }
+}
 
-  // --- Phase 2: if direct failed, use the sendPrompt bridge
-  if (!stats) {
-    showFetchStatus('loading', `🔄 Routing through Claude bridge… (this takes ~20–30s)`, [], []);
-    try {
-      stats = await callSendPromptBridge(teamA, teamB, today, promptText);
-    } catch(e) {
-      if (btn) btn.disabled = false;
-      if (sp)  sp.style.display = 'none';
-      showFetchStatus('failed',
-        '\u274C Autofill could not reach Claude AI. ' + e.message +
-        '<br><small style="opacity:.7">Tip: Open this PWA inside Claude.ai as an artifact for AI autofill to work. Local file mode has no API access.</small>',
-        [], []);
-      return;
+async function callGeminiAPI(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
+  
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: prompt
+      }]
+    }],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 2000,
+      responseMimeType: "application/json"
     }
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`API Error (${response.status}): ${error.substring(0, 200)}`);
   }
 
-  applyStats(stats, teamA, teamB);
-
-  if (btn) btn.disabled = false;
-  if (sp)  sp.style.display = 'none';
-}
-
-// ── sendPrompt bridge: uses the global sendPrompt fn injected by Claude.ai ──
-function callSendPromptBridge(teamA, teamB, today, promptText) {
-  return new Promise((resolve, reject) => {
-    if (typeof window.sendPrompt !== 'function') {
-      reject(new Error('sendPrompt not available — open this app inside Claude.ai as an artifact.'));
-      return;
-    }
-
-    window._claudeBridgeBuffer = '';
-    window._claudeBridgeResolve = (stats) => {
-      clearTimeout(timer);
-      window._claudeBridgeResolve = null;
-      window._claudeBridgeBuffer = '';
-      resolve(stats);
-    };
-
-    const timer = setTimeout(() => {
-      window._claudeBridgeResolve = null;
-      window._claudeBridgeBuffer = '';
-      reject(new Error('Claude took too long to respond (45s). Try again.'));
-    }, 45000);
-
-    // Send the request — Claude.ai will process and post back a message event
-    window.sendPrompt(
-      'BASKETBALL_STATS_JSON_REQUEST — respond with ONLY raw JSON, no text before or after:\n\n' + promptText
-    );
-  });
-}
-
-// ── Build prompt ─────────────────────────────────────────────
-function buildStatsPrompt(teamA, teamB, today) {
-  return `You are a basketball stats research assistant. Today is ${today}.
-
-Search the web and find REAL, ACCURATE stats for:
-- Team A: ${teamA}
-- Team B: ${teamB}
-
-Search SofaScore, ESPN, basketball-reference.com, or official league sites for their last 3 completed games each, plus head-to-head history.
-
-IMPORTANT — DEFENSIVE STATS (do not skip these):
-- defFgPct = the OPPONENT's field goal percentage in that game. Look at the opponent's box score, find their FG Made and FG Attempted, divide to get the %. e.g. opponent shot 38/82 = 0.463. This measures how well the opponent shot AGAINST this team's defense.
-- assistsAllowed = the number of assists the OPPONENT recorded in that game. Found in the opponent's box score totals.
-If you can find the opponent box score, you can always calculate these — do not leave them null if the data is available.
-
-Return ONLY raw JSON (no markdown, no backticks, no explanation). Start with { end with }:
-
-{"teamA":"${teamA}","teamB":"${teamB}","gamesA":[{"gameLabel":"vs Opp (Date)","teamScore":112,"oppScore":108,"fga":87,"tpa":32,"defFgPct":0.445,"assistsAllowed":24},{"gameLabel":"vs Opp (Date)","teamScore":null,"oppScore":null,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null},{"gameLabel":"vs Opp (Date)","teamScore":null,"oppScore":null,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null}],"gamesB":[{"gameLabel":"vs Opp (Date)","teamScore":105,"oppScore":99,"fga":82,"tpa":28,"defFgPct":0.438,"assistsAllowed":21},{"gameLabel":"vs Opp (Date)","teamScore":null,"oppScore":null,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null},{"gameLabel":"vs Opp (Date)","teamScore":null,"oppScore":null,"fga":null,"tpa":null,"defFgPct":null,"assistsAllowed":null}],"h2hGames":[{"a":115,"b":108,"date":"2025-01-15"},{"a":102,"b":110,"date":"2024-12-01"}],"dataQuality":"full","sources":["SofaScore","ESPN"]}
-
-FIELD DEFINITIONS:
-- teamScore/oppScore: actual final scores (gamesA[0] = most recent game)
-- fga: field goal ATTEMPTS by THIS team
-- tpa: 3-point ATTEMPTS by THIS team
-- defFgPct: OPPONENT field goal % e.g. 0.445 = 44.5% (from opponent box score)
-- assistsAllowed: assists the OPPONENT had in that game (from opponent box score)
-- h2hGames: a=${teamA} score, b=${teamB} score, most recent first
-- Use null ONLY if genuinely unavailable after searching. Do NOT fabricate. Return only JSON.`;
-}
-
-// ── Parse JSON from Claude response ──────────────────────────
-function parseStatsJson(text) {
-  if (!text) return null;
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return null;
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON found in response');
+  
   try {
-    return JSON.parse(m[0].replace(/```json|```/g, '').trim());
-  } catch(_) { return null; }
+    return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    throw new Error('Invalid JSON response');
+  }
 }
 
-// ── Apply parsed stats to state ──────────────────────────────
+function buildGeminiPrompt(teamA, teamB) {
+  const today = new Date().toISOString().split('T')[0];
+  
+  return `You are a basketball stats expert. Search your knowledge and return ONLY valid JSON for: ${teamA} vs ${teamB}.
+
+TASK: Find the last 3 completed games for each team, and their last 3 head-to-head matchups.
+
+REQUIRED FIELDS:
+- teamA: "${teamA}"
+- teamB: "${teamB}"
+- gamesA: array of 3 objects, most recent first, each with:
+  { teamScore, oppScore, fga, tpa, defFgPct, assistsAllowed }
+- gamesB: same structure
+- h2hGames: array of up to 3 objects, most recent first, each with:
+  { a: ${teamA} score, b: ${teamB} score, date: "YYYY-MM-DD" }
+
+DEFENSIVE STATS EXPLANATION:
+- defFgPct = OPPONENT's field goal percentage (e.g., opponent shot 38/82 = 0.463)
+- assistsAllowed = OPPONENT's assists in that game
+These come from the opponent's box score vs this team.
+
+RULES:
+1. Use NULL only if data is truly unavailable
+2. Do NOT fabricate numbers
+3. Return ONLY the JSON object, no markdown, no explanation
+4. Include dataQuality and sources fields
+
+EXAMPLE OUTPUT:
+{
+  "teamA": "Boston Celtics",
+  "teamB": "Golden State Warriors",
+  "gamesA": [
+    {"teamScore": 121, "oppScore": 112, "fga": 89, "tpa": 42, "defFgPct": 0.452, "assistsAllowed": 26},
+    {"teamScore": 118, "oppScore": 105, "fga": 86, "tpa": 38, "defFgPct": 0.441, "assistsAllowed": 24},
+    {"teamScore": 115, "oppScore": 110, "fga": 88, "tpa": 40, "defFgPct": 0.465, "assistsAllowed": 25}
+  ],
+  "gamesB": [
+    {"teamScore": 119, "oppScore": 114, "fga": 87, "tpa": 39, "defFgPct": 0.458, "assistsAllowed": 27},
+    {"teamScore": 112, "oppScore": 108, "fga": 84, "tpa": 36, "defFgPct": 0.449, "assistsAllowed": 23},
+    {"teamScore": 116, "oppScore": 109, "fga": 86, "tpa": 37, "defFgPct": 0.462, "assistsAllowed": 25}
+  ],
+  "h2hGames": [
+    {"a": 121, "b": 119, "date": "2025-01-20"},
+    {"a": 112, "b": 118, "date": "2024-12-15"},
+    {"a": 115, "b": 110, "date": "2024-11-10"}
+  ],
+  "dataQuality": "full",
+  "sources": ["Web Search"]
+}
+
+Now provide JSON for ${teamA} vs ${teamB}:`;
+}
+
 function applyStats(stats, teamA, teamB) {
   const filled = [], warnings = [];
   let defEstimated = false;
@@ -2658,15 +2661,12 @@ function applyStats(stats, teamA, teamB) {
       if (g.defFgPct != null) {
         state.defA[i].fgPct = parseFloat((+g.defFgPct).toFixed(3));
       } else if (g.oppScore != null && g.fga != null && g.fga > 0) {
-        // Fallback: estimate opponent FG% from their score vs team's FGA
-        // Typical: ~55% of opponent pts come from 2pt FGM, rest from 3s and FTs
         state.defA[i].fgPct = parseFloat(Math.min(0.60, Math.max(0.38, g.oppScore / (g.fga * 2.15))).toFixed(3));
         defEstimated = true;
       }
       if (g.assistsAllowed != null) {
         state.defA[i].ast = Math.round(g.assistsAllowed);
       } else if (g.oppScore != null) {
-        // Fallback: estimate assists from opponent score (~55% of FGM get an assist)
         const estFGM = Math.round(g.oppScore * 0.38);
         state.defA[i].ast = Math.max(14, Math.min(30, Math.round(estFGM * 0.55)));
         defEstimated = true;
@@ -2706,7 +2706,7 @@ function applyStats(stats, teamA, teamB) {
     filled.push(`H2H: ${Math.min(stats.h2hGames.length,3)} results`);
   } else { warnings.push('No H2H history found — fill manually'); }
 
-  if (stats.dataQuality === 'estimated') warnings.push('Some stats estimated — verify on SofaScore');
+  if (stats.dataQuality === 'estimated') warnings.push('Some stats estimated — verify');
   if (defEstimated) warnings.push('Def FG% / Assists estimated from scores — verify manually');
   if (stats.sources?.length) filled.push('Sources: ' + stats.sources.join(', '));
 
@@ -2722,8 +2722,6 @@ function applyStats(stats, teamA, teamB) {
     filled, warnings
   );
 }
-
-// modal close on overlay tap — handled in main DOMContentLoaded below
 
 // ═══════════════════════════════════════════════════════════════
 // v3.1: PRINT / PDF
@@ -2772,7 +2770,7 @@ function printFixtures() {
   }).join('');
 
   const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>BMA v3.1 — Fixture Report ${new Date().toLocaleDateString('en-GB')}</title>
+  <title>BMA v3.4 — Fixture Report ${new Date().toLocaleDateString('en-GB')}</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff;padding:20px;max-width:820px;margin:0 auto}
     h1{font-size:20px;margin:0 0 3px}
@@ -2785,7 +2783,7 @@ function printFixtures() {
     @media print{body{padding:8px}@page{margin:1cm}}
   </style></head><body>
   <div class="hd">
-    <h1>🏀 Basketball Matchup Analyzer v3.1</h1>
+    <h1>🏀 Basketball Matchup Analyzer v3.4</h1>
     <p>Fixture Log & Prediction Report · Generated: ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
     <p>For analytical and educational purposes only. Not betting or financial advice.</p>
   </div>
@@ -2813,19 +2811,16 @@ function buildPredictionData(f) {
   const L = LEAGUES[f.league] || LEAGUES['Low-Tier / Unknown'];
   const combined = f.combined, trap = f.trapPct, conf = f.conf || 50;
   const avgTotal = Math.round((f.avgPtsA + f.avgPtsB) / 2);
-  const h2h = f.h2hStats; // v3.2: full H2H stats object
+  const h2h = f.h2hStats;
 
-  // v3.2: Blend form average with H2H average for a smarter line
   let smartAvg = avgTotal;
   if (h2h && h2h.count >= 2) {
-    // Weight H2H at 40%, recent form at 60% when we have 2-3 H2H games
     const weight = h2h.count === 3 ? 0.45 : 0.30;
     smartAvg = Math.round(avgTotal * (1 - weight) + h2h.avgTotal * weight);
   }
   const lineRaw = smartAvg + (f.classification==='fast' ? 3 : f.classification==='slow' ? -3 : 0);
   const line = (lineRaw % 1 === 0) ? lineRaw + 0.5 : lineRaw;
 
-  // v3.2: Data-driven AH line from H2H margin
   const h2hAHLine = h2h && h2h.count >= 2
     ? (h2h.avgMargin >= 10 ? (h2h.avgMargin - 1.5) * -1 : h2h.avgMargin >= 6 ? -5.5 : -3.5)
     : null;
@@ -2853,7 +2848,6 @@ function buildPredictionData(f) {
     if (f.combFGA < 115) reasons.push({ color:'#EF4444', text:`Ultra-low combined FGA (${f.combFGA}) confirms genuine low volume — not just cold shooting.` });
   }
 
-  // v3.2: H2H-informed Over/Under note
   if (h2h && h2h.count >= 2) {
     const h2hLine = h2h.avgTotal + 0.5;
     if (h2h.trend === 'rising') {
@@ -2865,16 +2859,13 @@ function buildPredictionData(f) {
     }
   }
 
-  // Asian Handicap / Win prediction
   const nameA = f.teamA, nameB = f.teamB;
 
-  // v3.2: If H2H win record exists, use it to inform win direction
   if (h2h && h2h.count >= 2 && h2h.dominant !== 'even' && trap <= 40) {
     const h2hWinner  = h2h.dominant === 'A' ? nameA : nameB;
     const h2hWins    = h2h.dominant === 'A' ? h2h.aWins : h2h.bWins;
     const h2hLosses  = h2h.dominant === 'A' ? h2h.bWins : h2h.aWins;
     const ahUseLine  = h2hAHLine ? h2hAHLine : (h2h.avgMargin >= 8 ? -7.5 : -4.5);
-    // Only push strong H2H win pred if pace score also agrees
     const paceAgrees = (h2h.dominant === 'A' && f.scoreA >= f.scoreB) ||
                        (h2h.dominant === 'B' && f.scoreB >= f.scoreA);
     if (h2hWins >= 2) {
@@ -2888,7 +2879,6 @@ function buildPredictionData(f) {
       }
     }
   } else if (f.scoreA !== f.scoreB && trap <= 40) {
-    // Fallback to pace-model AH (v3.1 logic) if no H2H data
     const diff = Math.abs(f.scoreA - f.scoreB);
     const stronger = f.scoreA > f.scoreB ? nameA : nameB;
     const ahLine = diff >= 4 ? -7.5 : diff >= 2 ? -5.5 : -3.5;
@@ -2903,17 +2893,14 @@ function buildPredictionData(f) {
     }
   }
 
-  // OT note
   if (f.otRisk) {
     reasons.push({ color:'#F59E0B', text:`⚠️ OT Risk — teams closely matched. If betting under, allow buffer: overtime adds 20–27 pts.` });
   }
 
-  // Blowout note
   if ((f.alerts||[]).find(a => a.label.includes('Blowout') && a.type === 'warn')) {
     reasons.push({ color:'#EF4444', text:`Blowout pattern in recent games. One team may collapse. Supports under and stronger team covering AH.` });
   }
 
-  // v3.2: H2H inconsistency note
   if (h2h && h2h.count >= 2) {
     const maxT = Math.max(...h2h.totals), minT = Math.min(...h2h.totals);
     if (maxT - minT >= 20) {
@@ -2935,18 +2922,15 @@ function renderPredictions() {
   const leagueFil = document.getElementById('predLeagueFilter').value;
   const confFil   = parseInt(document.getElementById('predConfMin').value) || 0;
 
-  // Populate league filter dynamically
   const allFx = getFixtures();
   const leagues = ['ALL', ...new Set(allFx.map(f => f.league))];
   const lfEl = document.getElementById('predLeagueFilter');
   const curVal = lfEl.value;
   lfEl.innerHTML = leagues.map(l => `<option value="${l}"${l===curVal?' selected':''}>${l}</option>`).join('');
 
-  // Get today's fixtures (fallback to recent if none today, for testing)
   let fixtures = allFx.filter(f => f.dateISO === todayISO);
-  if (!fixtures.length) fixtures = allFx.slice(0, 12); // show latest for testing
+  if (!fixtures.length) fixtures = allFx.slice(0, 12);
 
-  // Apply filters
   if (leagueFil !== 'ALL') fixtures = fixtures.filter(f => f.league === leagueFil);
   if (confFil > 0)          fixtures = fixtures.filter(f => (f.conf||0) >= confFil);
 
@@ -3001,45 +2985,21 @@ function renderPredictions() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Environment detection ────────────────────────────────
-  // Show warning if running as local file (API autofill won't work)
-  const isLocalFile = location.protocol === 'file:';
-  const notice = document.getElementById('claudeEnvNotice');
-  if (isLocalFile && notice) notice.style.display = 'block';
-
-  // ── sendPrompt response listener ─────────────────────────
-  // Claude.ai posts artifact responses back as window messages
-  window.addEventListener('message', (evt) => {
-    // Handle Claude.ai artifact response (sendPrompt reply)
-    if (evt.data?.type === 'claude_response' || evt.data?.role === 'assistant') {
-      const txt = evt.data?.text || evt.data?.content || '';
-      if (txt && window._claudeBridgeResolve) {
-        const stats = parseStatsJson(txt);
-        if (stats) {
-          window._claudeBridgeResolve(stats);
-        } else {
-          // Text came back but no JSON — might still be streaming, wait for more
-          window._claudeBridgeBuffer = (window._claudeBridgeBuffer || '') + txt;
-          const buffered = parseStatsJson(window._claudeBridgeBuffer);
-          if (buffered) window._claudeBridgeResolve(buffered);
-        }
-      }
-    }
-  }, false);
-
-  // Modal overlay close on tap
+  // Modal close on overlay
   const fxModal = document.getElementById('fxDetailModal');
   if (fxModal) fxModal.addEventListener('click', function(e) { if (e.target === this) closeFxModal(); });
 
   loadState();
   buildInputUI();
   checkDataCompleteness();
-  updateDot();
   renderQ1Benchmarks();
+  loadGeminiApiKey();
+  
   // Register SW
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+  
   // Init predictions date
   const predDateEl = document.getElementById('predDateSub');
   if (predDateEl) {
